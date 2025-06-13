@@ -77,6 +77,7 @@ print(synth.shape)  # (3, 5503)
 ```
 
 ### Important
+Be sure to select the corresponding device for run the model, whether GPU or CPU.
 If using the CPU, you can select the number of jobs to use. This configuration must be done before instantiating FastNIRNet.
 
 ```python
