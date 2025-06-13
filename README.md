@@ -46,11 +46,12 @@ The core library is light‑weight; the first time you instantiate a model, its 
 
 > FastNIRNet is currently in private beta. 
 
+
 ## Quick start — single input
 
 ```python
 import numpy as np
-from fastnirnet.fastnirnet import FastNIRNet
+from fastnirnet import FastNIRNet
 
 # Medium‑size network (downloads weights on first run)
 net = FastNIRNet("medium")
@@ -73,6 +74,16 @@ X = np.array([
 
 synth = net.synthetize_spectra(X)
 print(synth.shape)  # (3, 5503)
+```
+
+### Important
+If using the CPU, you can select the number of jobs to use. This configuration must be done before instantiating FastNIRNet.
+
+```python
+from fastnirnet import FastNIRNet, config
+config(jobs=6)
+net = FastNIRNet("medium")
+...
 ```
 
 ---
@@ -111,10 +122,6 @@ class FastNIRNet(model: str = "large"):
 ---
 
 ## Contributing
-
-1. Fork this repository and create a feature or bug‑fix branch.
-2. Run the unit tests (`pytest`).
-3. Open a pull request.
 
 Bug reports and feature requests are welcome on the *Issues* page.
 
