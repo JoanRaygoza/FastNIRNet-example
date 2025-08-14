@@ -22,7 +22,7 @@ The core library is light‑weight; the first time you instantiate a model, its 
 | **\[α/M]** (dex)           | –0.75 | +1.0  |
 | **vmic** (km s⁻¹)          | 0.3   | 4.8   |
 | **v sin i** (km s⁻¹)       | 0     | 150   |
-| **doppler shift** (km s⁻¹) | -200  | 200   |
+| **doppler shift** (km s⁻¹) | -400  | 400   |
 
 ---
 
@@ -30,10 +30,10 @@ The core library is light‑weight; the first time you instantiate a model, its 
 
 | Variant    | Parameters | Download size\* | Best suited for                |
 | ---------- | ---------- | --------------- | ------------------------------ |
-| **tiny**   | \~790 k    | ≈ 9 MB          | Edge devices & rapid scans     |
-| **small**  | \~3 M      | ≈ 38 MB         | Laptops / notebooks            |
-| **medium** | \~15 M     | ≈ 183 MB        | Workstations & small GPUs      |
-| **large**  | \~52 M     | ≈ 630 MB        | Maximum fidelity (server GPUs) |
+| **tiny**   | \~790 k    | ≈ 8 MB          | Edge devices & rapid scans     |
+| **small**  | \~3 M      | ≈ 35 MB         | Laptops / notebooks            |
+| **medium** | \~15 M     | ≈ 170 MB        | Workstations & small GPUs      |
+| **large**  | \~52 M     | ≈ 604 MB        | Maximum fidelity (server GPUs) |
 
 \*Sizes are approximate .h5 files downloaded on demand.
 
@@ -176,16 +176,27 @@ wl   = net.get_wavelength()  # ndarray of 9480 wavelengths (Å)
 ---
 
 ## API (`fastnirnet`)
-### `class FastNIRNet(model: str = "large")`
+### `class FastNIRNet(model: str = "large", batch_size: int = 512)`
 
 Main interface for spectral synthesis and inversion using neural network models.
+
+The `model` argument can be one of:
+
+* `"tiny"` — fastest, lower accuracy
+* `"small"` — good trade-off
+* `"medium"` — higher accuracy, slower
+* `"large"` *(default)* — best accuracy, highest memory and compute cost
+
+Model weights are downloaded on first use and cached locally in `~/FastNIRNet_models/`.
+
+`batch_size` argument controls the amount of data to load on the model when it is predicting (synthetize and inversion).
 
 ---
 
 ### **Methods**
 
 ```python
-synthetize_spectra(data: np.ndarray, batch_size: int = 32) -> np.ndarray
+synthetize_spectra(data: np.ndarray) -> np.ndarray
 ```
 
 Generates synthetic spectra from stellar parameters.
@@ -228,6 +239,8 @@ inversion(
     vmic_range: tuple[float, float] = (0.3, 4.8),
     vsini_range: tuple[float, float] = (0.0, 150.0),
     doppler_shift_range: tuple[float, float] = (-200.0, 200.0),
+    tol: float = 0.5,
+    min_wlp = int = 4,
     verbose: int = 0
 ) -> tuple[np.ndarray, np.ndarray, float]
 ```
@@ -246,25 +259,13 @@ You can:
 * W, C1, C2 (`float`): PSO hyperparameters controlling inertia and learning factors.
 * fixed_teff, fixed_logg, fixed_mh, fixed_bfield, fixed_vsini (`float | None`): Values to fix specific parameters during the inversion. If `None`, the parameter is optimized.
 * teff_range, logg_range, mh_range, bfield_range, vsini_range (`tuple[float, float]`): Search intervals for each parameter (used if not fixed).
-* tol (`float`): tolerance in difference of 2 consecutive wavelength points to consider in optimization process.
+* tol (`float`): Tolerance in difference of 2 consecutive wavelength points to consider in optimization process.
+* min_wlp(`int`): Minimum number of wavelength points consecutives below the tolence to consider in optimization process.
 * verbose (`int`): Verbosity level (0 = silent, 1 = progress info).
 **Returns**:
 * `solution` (`np.ndarray`): Best-fit parameter vector.
 * `inv_spectra` (`np.ndarray`): Synthetic spectrum corresponding to the best solution.
 * `fitness` (`float`): Final error value of the best-fit solution.
-
----
-
-### Available model sizes
-
-The `model` argument can be one of:
-
-* `"tiny"` — fastest, lower accuracy
-* `"small"` — good trade-off
-* `"medium"` — higher accuracy, slower
-* `"large"` *(default)* — best accuracy, highest memory and compute cost
-
-Model weights are downloaded on first use and cached locally in `~/FastNIRNet_models/`.
 
 ---
 
