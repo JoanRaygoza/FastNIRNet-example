@@ -17,16 +17,17 @@ The core library is light‑weight; the first time you instantiate a model, its 
 | Parameter                  | Min   | Max   |
 | -------------------------- | ----- | ----- |
 | **Teff** (K)               | 3 000 | 8 000 |
-| **log g** (dex)            | 1.5   | 5.5   |
+| **log g** (dex)            | 2.5   | 5.5   |
 | **\[M/H]** (dex)           | –2.5  | +1.0  |
 | **\[α/M]** (dex)           | –0.75 | +1.0  |
 | **vmic** (km s⁻¹)          | 0.3   | 4.8   |
 | **v sin i** (km s⁻¹)       | 0     | 150   |
-| **doppler shift** (km s⁻¹) | -400  | 400   |
+| **doppler shift** (km s⁻¹) | -5    | 5     |
 
 ---
 
 ## Model variants
+Right now is only the large model.
 
 | Variant    | Parameters | Download size\* | Best suited for                |
 | ---------- | ---------- | --------------- | ------------------------------ |
@@ -51,35 +52,34 @@ The core library is light‑weight; the first time you instantiate a model, its 
 import numpy as np
 import fastnirnet
 
-# Medium‑size network (downloads weights on first run)
 net = FastNIRNet("large")
 
 # teff, logg, mh, am, vmic, vsini, doppler shift
-x = np.array([6500, 4.5, 0.0, 0.4, 1.3, 15, -27])
+x = np.array([5550, 3.1, 0.2, 0.17, 1.2, 50, -3])
 
 spectrum = net.synthetize_spectra(x)
-print(spectrum.shape)  # (1, 9480)
+print(spectrum.shape) # (1, 7928)
 ```
 
 ### Synthetize — Multiple inputs
 
 ```python
 X = np.array([
-    [3200, 1.5, -0.2, -0.4, 0.3, 5, 0.0],
-    [6500, 3.2, 0.7, 0.4, 1.3, 100, -35.8],
-    [7500, 4.5, 0.0, 0.0, 3.3, 70.5, 50.7],
+    [3200, 2.5, -0.2, -0.4, 0.3, 5, 0.0],
+    [6500, 3.2, 0.7, 0.4, 1.3, 100, -3],
+    [7500, 4.5, 0.0, 0.0, 3.3, 70.5, 5],
 ])
 
 synth = net.synthetize_spectra(X)
-print(synth.shape)  # (3, 9480)
+print(synth.shape)  # (3, 7928)
 ```
 
 ### Inversion - Estimate parameters from a spectrum
-H-MagNet can also be used to invert spectra, estimating the seven astrophysical parameters (Teff, logg, [M/H], AM, vmic, vsini, doppler shift) from an observed flux vector. It uses Particle Swarm Optimization (PSO) to minimize the error between the observed spectrum and the network's prediction.
+FastNIRNet can also be used to invert spectra, estimating the seven astrophysical parameters (Teff, logg, [M/H], AM, vmic, vsini, doppler shift) from an observed flux vector. It uses Particle Swarm Optimization (PSO) to minimize the error between the observed spectrum and the network's prediction.
 
 ```python
 solution, inv_spectra, fitness = net.inversion(
-    y_obs=spectrum,         # Input flux (shape: [1, 9480] or [9480])
+    y_obs=spectrum,         # Input flux (shape: [1, 7928] or [7928])
     n_particles=1024,       # Number of particles (poblation size)
     iters=10,               # Optimization iterations
     verbose=1               # Show progress
@@ -170,7 +170,7 @@ net = FastNIRNet("large")
 ## Extra utilities
 
 ```python
-wl   = net.get_wavelength()  # ndarray of 9480 wavelengths (Å)
+wl   = net.get_wavelength()  # ndarray of 7928 wavelengths (Å)
 ```
 
 ---
@@ -202,7 +202,7 @@ synthetize_spectra(data: np.ndarray) -> np.ndarray
 Generates synthetic spectra from stellar parameters.
 
 * `data`: 1D or 2D NumPy array of shape `(7,)` or `(n_samples, 7)` in the order
-  *(Teff, log g, \[M/H], AM, vmic, vsini, doppler)*.
+  *(Teff, log g, \[M/H], AM, vmic, vsini, doppler shift)*.
 * `batch_size`: number of inputs per batch (for efficiency on large inputs).
 
 ---
@@ -211,7 +211,7 @@ Generates synthetic spectra from stellar parameters.
 get_wavelength() -> np.ndarray
 ```
 
-Returns the wavelength grid (shape: `(9480,)`) used by the model.
+Returns the wavelength grid (shape: `(7928,)`) used by the model.
 
 ---
 
@@ -233,12 +233,12 @@ inversion(
     fixed_vsini: float | None = None,
     fixed_doppler_shift: float | None = None,
     teff_range: tuple[float, float] = (3000, 8000),
-    logg_range: tuple[float, float] = (1.5, 5.5),
+    logg_range: tuple[float, float] = (2.5, 5.5),
     mh_range: tuple[float, float] = (-2.5, 1.0),
     am_range: tuple[float, float] = (-0.75, 1.0),
     vmic_range: tuple[float, float] = (0.3, 4.8),
     vsini_range: tuple[float, float] = (0.0, 150.0),
-    doppler_shift_range: tuple[float, float] = (-200.0, 200.0),
+    doppler_shift_range: tuple[float, float] = (-5.0, 5.0),
     tol: float = 0.5,
     min_wlp = int = 4,
     verbose: int = 0
